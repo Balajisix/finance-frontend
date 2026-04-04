@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const baseURL = "https://finance-backend-api.vercel.app/api";
+
 const api = axios.create({
-  baseURL: "https://finance-backend-api.vercel.app/api",
+  baseURL,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });

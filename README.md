@@ -2,6 +2,8 @@
 
 React SPA for the finance product: **login**, **dashboard** and analytics (Recharts), **financial records** (CRUD), **user directory**, and **roles / RBAC** management. It talks to the [Finance Backend API](../server/README.md) over HTTPS with **JWT access tokens** and **refresh tokens** in **HTTP-only cookies** (`withCredentials`).
 
+**Live site:** [https://finance-frontend-zorvyn.vercel.app/](https://finance-frontend-zorvyn.vercel.app/)
+
 ---
 
 ## Tech stack

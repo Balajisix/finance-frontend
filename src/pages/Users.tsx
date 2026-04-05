@@ -3,9 +3,10 @@ import { useUsersList, useCreateUser, useDeleteUser } from "../hooks/useUsers.ts
 import { useRolesList } from "../hooks/useRoles.ts";
 import PermissionGate from "../components/PermissionGate.tsx";
 import type { UserItem } from "../types/users.ts";
+import { getApiErrorMessage } from "../lib/apiErrors.ts";
 
 const Users = () => {
-  const { data: users, isLoading } = useUsersList();
+  const { data: users, isLoading, isError, error: usersError, refetch } = useUsersList();
   const { data: roles } = useRolesList();
   const createUser = useCreateUser();
   const deleteUser = useDeleteUser();
@@ -16,6 +17,7 @@ const Users = () => {
   const [password, setPassword] = useState("");
   const [roleId, setRoleId] = useState("");
   const [error, setError] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const resetForm = () => {
     setName("");
@@ -39,27 +41,37 @@ const Users = () => {
           resetForm();
           setShowModal(false);
         },
-        onError: (err) => {
-          if (err && typeof err === "object" && "response" in err) {
-            const res = (err as { response?: { data?: { message?: string } } }).response;
-            setError(res?.data?.message ?? "Failed to create user");
-          } else {
-            setError("Something went wrong");
-          }
-        },
+        onError: (err) => setError(getApiErrorMessage(err, "Failed to create user")),
       }
     );
   };
 
   const confirmDelete = () => {
     if (!deleteTarget) return;
+    setDeleteError(null);
     deleteUser.mutate(deleteTarget.id, {
-      onSuccess: () => setDeleteTarget(null),
-      onError: () => setDeleteTarget(null),
+      onSuccess: () => {
+        setDeleteTarget(null);
+        setDeleteError(null);
+      },
+      onError: (err) => setDeleteError(getApiErrorMessage(err, "Could not delete user")),
     });
   };
   return (
     <div className="p-4 space-y-5 sm:p-6">
+      {isError && (
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-4 sm:flex-row sm:justify-between">
+          <p className="text-sm text-red-800">{getApiErrorMessage(usersError, "Could not load users.")}</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Users</h1>
         <PermissionGate permission="users.write">
@@ -89,6 +101,10 @@ const Users = () => {
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-gray-400">Loading…</td>
+              </tr>
+            ) : isError ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-red-600">Could not load users.</td>
               </tr>
             ) : !users?.length ? (
               <tr>
@@ -239,6 +255,9 @@ const Users = () => {
               Are you sure you want to delete <span className="font-medium text-gray-700">{deleteTarget.name}</span>?
               This action cannot be undone.
             </p>
+            {deleteError && (
+              <p className="mt-3 text-center text-sm text-red-600">{deleteError}</p>
+            )}
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => setDeleteTarget(null)}

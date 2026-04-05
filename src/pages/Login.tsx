@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useLogin } from "../hooks/useAuth.ts";
 import { useAuthContext } from "../context/AuthContext.tsx";
+import { getApiErrorMessage } from "../lib/apiErrors.ts";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -32,12 +33,7 @@ const Login = () => {
       {
         onSuccess: () => navigate("/dashboard", { replace: true }),
         onError: (err) => {
-          if (err && typeof err === "object" && "response" in err) {
-            const res = (err as { response?: { data?: { message?: string } } }).response;
-            setError(res?.data?.message ?? "Login failed");
-          } else {
-            setError("Something went wrong");
-          }
+          setError(getApiErrorMessage(err, "Login failed"));
         },
       }
     );

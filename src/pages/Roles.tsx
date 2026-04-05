@@ -12,11 +12,14 @@ import {
 } from "../hooks/useRoles.ts";
 import { useUsersList } from "../hooks/useUsers.ts";
 import type { Role } from "../types/roles.ts";
+import { getApiErrorMessage } from "../lib/apiErrors.ts";
 
 const Roles = () => {
-  const { data: roles, isLoading } = useRolesList();
-  const { data: allPermissions } = usePermissionsList();
-  const { data: allUsers } = useUsersList();
+  const { data: roles, isLoading, isError, error: rolesError, refetch } = useRolesList();
+  const { data: allPermissions, isError: permError, error: permErr, refetch: refetchPerm } =
+    usePermissionsList();
+  const { data: allUsers, isError: usersErr, error: usersListErr, refetch: refetchUsers } =
+    useUsersList();
   const createRole = useCreateRole();
   const deleteRole = useDeleteRole();
   const attachPermission = useAttachPermission();
@@ -61,8 +64,48 @@ const Roles = () => {
     });
   };
 
+  const listError =
+    isError || permError || usersErr
+      ? getApiErrorMessage(rolesError ?? permErr ?? usersListErr, "Could not load roles data.")
+      : null;
+
   return (
     <div className="p-4 space-y-5 sm:p-6">
+      {listError && (
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-4 sm:flex-row sm:justify-between">
+          <p className="text-sm text-red-800">{listError}</p>
+          <div className="flex flex-wrap gap-2">
+            {isError && (
+              <button
+                type="button"
+                onClick={() => refetch()}
+                className="rounded-lg bg-red-700 px-3 py-2 text-sm font-medium text-white hover:bg-red-800"
+              >
+                Retry roles
+              </button>
+            )}
+            {permError && (
+              <button
+                type="button"
+                onClick={() => refetchPerm()}
+                className="rounded-lg bg-red-700 px-3 py-2 text-sm font-medium text-white hover:bg-red-800"
+              >
+                Retry permissions
+              </button>
+            )}
+            {usersErr && (
+              <button
+                type="button"
+                onClick={() => refetchUsers()}
+                className="rounded-lg bg-red-700 px-3 py-2 text-sm font-medium text-white hover:bg-red-800"
+              >
+                Retry users
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Roles &amp; Permissions</h1>
         <button
@@ -134,6 +177,8 @@ const Roles = () => {
         <div className="flex justify-center py-12">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
         </div>
+      ) : isError ? (
+        <p className="py-12 text-center text-red-600">Could not load roles.</p>
       ) : !roles?.length ? (
         <p className="py-12 text-center text-gray-400">No roles found</p>
       ) : (

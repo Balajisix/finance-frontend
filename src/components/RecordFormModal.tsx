@@ -16,6 +16,7 @@ const RecordFormModal = ({ open, onClose, onSubmit, isPending, record }: Props) 
   const [category, setCategory] = useState("Other");
   const [date, setDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
   useEffect(() => {
     if (record) {
@@ -37,8 +38,14 @@ const RecordFormModal = ({ open, onClose, onSubmit, isPending, record }: Props) 
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    setFieldError(null);
+    const n = Number(amount);
+    if (!Number.isFinite(n) || n < 0) {
+      setFieldError("Enter a valid amount (0 or greater).");
+      return;
+    }
     onSubmit({
-      amount: Number(amount),
+      amount: n,
       type,
       category,
       date,
@@ -59,6 +66,9 @@ const RecordFormModal = ({ open, onClose, onSubmit, isPending, record }: Props) 
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {fieldError && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{fieldError}</div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Amount</label>

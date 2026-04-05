@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useRecordsList, useCreateRecord, useUpdateRecord, useDeleteRecord } from "../hooks/useRecords.ts";
 import { useAuthContext } from "../context/AuthContext.tsx";
+import { getApiErrorMessage } from "../lib/apiErrors.ts";
 import PermissionGate from "../components/PermissionGate.tsx";
 import RecordFormModal from "../components/RecordFormModal.tsx";
 import { CATEGORIES } from "../constants/categories.ts";
@@ -17,8 +18,9 @@ const Records = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editRecord, setEditRecord] = useState<FinancialRecord | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
 
-  const { data, isLoading } = useRecordsList(filters);
+  const { data, isLoading, isError, error: listError, refetch } = useRecordsList(filters);
 
   const filteredRows = useMemo(() => {
     if (!data?.data) return [];
@@ -46,18 +48,32 @@ const Records = () => {
   };
 
   const handleSubmit = (payload: Parameters<typeof createRecord.mutate>[0]) => {
+    setMutationError(null);
     if (editRecord) {
       updateRecord.mutate(
         { id: editRecord.id, data: payload },
-        { onSuccess: () => setModalOpen(false) }
+        {
+          onSuccess: () => setModalOpen(false),
+          onError: (err) => setMutationError(getApiErrorMessage(err, "Could not update record")),
+        }
       );
     } else {
-      createRecord.mutate(payload, { onSuccess: () => setModalOpen(false) });
+      createRecord.mutate(payload, {
+        onSuccess: () => setModalOpen(false),
+        onError: (err) => setMutationError(getApiErrorMessage(err, "Could not create record")),
+      });
     }
   };
 
   const handleDelete = (id: string) => {
-    deleteRecord.mutate(id, { onSuccess: () => setDeleteConfirm(null) });
+    setMutationError(null);
+    deleteRecord.mutate(id, {
+      onSuccess: () => setDeleteConfirm(null),
+      onError: (err) => {
+        setMutationError(getApiErrorMessage(err, "Could not delete record"));
+        setDeleteConfirm(null);
+      },
+    });
   };
 
   const updateFilter = (patch: Partial<RecordFilters>) => {
@@ -68,6 +84,27 @@ const Records = () => {
 
   return (
     <div className="p-4 space-y-5 sm:p-6">
+      {mutationError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {mutationError}
+        </div>
+      )}
+
+      {isError && (
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-center sm:flex-row sm:justify-between sm:text-left">
+          <p className="text-sm text-red-800">
+            {getApiErrorMessage(listError, "Could not load records.")}
+          </p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="shrink-0 rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-800"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Financial Records</h1>
         <PermissionGate permission="records.write">
@@ -164,7 +201,13 @@ const Records = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {isLoading ? (
+            {isError ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-red-600">
+                  Failed to load data. Use Retry above.
+                </td>
+              </tr>
+            ) : isLoading ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                   Loading…
@@ -274,7 +317,10 @@ const Records = () => {
       {/* Add/Edit modal */}
       <RecordFormModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setMutationError(null);
+        }}
         onSubmit={handleSubmit}
         isPending={createRecord.isPending || updateRecord.isPending}
         record={editRecord}

@@ -20,7 +20,10 @@ const Records = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
 
-  const { data, isLoading, isError, error: listError, refetch } = useRecordsList(filters);
+  const { data, isLoading, isFetching, isError, error: listError, refetch } =
+    useRecordsList(filters);
+
+  const showTableFetchOverlay = isFetching && !isLoading;
 
   const filteredRows = useMemo(() => {
     if (!data?.data) return [];
@@ -131,6 +134,20 @@ const Records = () => {
             className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
           />
         </div>
+
+        {showTableFetchOverlay && (
+          <div
+            className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50/90 px-4 py-2.5 text-sm text-blue-800"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <span
+              className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600"
+              aria-hidden
+            />
+            <span>Fetching filtered results…</span>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-white p-4">
           <div>
@@ -275,7 +292,7 @@ const Records = () => {
             </p>
             <div className="flex gap-1">
               <button
-                disabled={!meta.hasPreviousPage}
+                disabled={!meta.hasPreviousPage || isFetching}
                 onClick={() => setFilters((p) => ({ ...p, page: (p.page ?? 1) - 1 }))}
                 className="rounded-lg border border-gray-300 px-3 py-1 text-sm disabled:opacity-40"
               >
@@ -290,8 +307,10 @@ const Records = () => {
                     <span key={p} className="flex items-center">
                       {gap && <span className="px-1 text-gray-400">…</span>}
                       <button
+                        type="button"
+                        disabled={isFetching}
                         onClick={() => setFilters((f) => ({ ...f, page: p }))}
-                        className={`rounded-lg px-3 py-1 text-sm ${
+                        className={`rounded-lg px-3 py-1 text-sm disabled:opacity-40 ${
                           p === meta.page
                             ? "bg-blue-600 text-white"
                             : "border border-gray-300 hover:bg-gray-50"
@@ -303,7 +322,7 @@ const Records = () => {
                   );
                 })}
               <button
-                disabled={!meta.hasNextPage}
+                disabled={!meta.hasNextPage || isFetching}
                 onClick={() => setFilters((p) => ({ ...p, page: (p.page ?? 1) + 1 }))}
                 className="rounded-lg border border-gray-300 px-3 py-1 text-sm disabled:opacity-40"
               >

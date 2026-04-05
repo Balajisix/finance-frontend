@@ -263,7 +263,7 @@ const Roles = () => {
   );
 };
 
-/* ──────────────────────── Role Card ──────────────────────── */
+/*  Role Card  */
 
 type RoleCardProps = {
   role: Role;
@@ -322,24 +322,49 @@ const RoleCard = ({
       {/* Expanded details */}
       {isExpanded && (
         <div className="border-t border-gray-100 px-5 py-4 space-y-5">
-          {role.description && <p className="text-sm text-gray-500">{role.description}</p>}
 
           {/* Permissions section */}
           <div>
             <h4 className="mb-2 text-xs font-semibold uppercase text-gray-500">Permissions</h4>
             <div className="flex flex-wrap gap-2">
-              {role.permissions.map((rp) => (
-                <span key={rp.permission.id} className="group flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-                  {rp.permission.slug}
-                  <button
-                    onClick={() => detachPermission.mutate({ roleId: role.id, permissionId: rp.permission.id })}
-                    className="ml-0.5 hidden rounded-full p-0.5 text-blue-400 hover:bg-blue-100 hover:text-blue-600 group-hover:inline-block"
-                    title="Remove"
+              {role.permissions.map((rp) => {
+                const detachingThis =
+                  detachPermission.isPending &&
+                  detachPermission.variables?.roleId === role.id &&
+                  detachPermission.variables?.permissionId === rp.permission.id;
+                return (
+                  <span
+                    key={rp.permission.id}
+                    className="group flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700"
                   >
-                    &times;
-                  </button>
-                </span>
-              ))}
+                    {rp.permission.slug}
+                    <button
+                      type="button"
+                      title={detachingThis ? "Removing…" : "Remove"}
+                      disabled={detachPermission.isPending}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        detachPermission.mutate({
+                          roleId: role.id,
+                          permissionId: rp.permission.id,
+                        });
+                      }}
+                      className={`ml-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-blue-400 transition hover:bg-blue-100 hover:text-blue-600 disabled:cursor-not-allowed ${
+                        detachingThis ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                      } ${detachPermission.isPending && !detachingThis ? "pointer-events-none" : ""}`}
+                    >
+                      {detachingThis ? (
+                        <span
+                          className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600"
+                          aria-hidden
+                        />
+                      ) : (
+                        <span aria-hidden>&times;</span>
+                      )}
+                    </button>
+                  </span>
+                );
+              })}
               {role.permissions.length === 0 && (
                 <span className="text-xs text-gray-400">No permissions assigned</span>
               )}
@@ -366,7 +391,7 @@ const RoleCard = ({
                   }}
                   className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Add
+                  {attachPermission.isPending ? "Adding…" : "Add"}
                 </button>
               </div>
             )}
@@ -387,7 +412,7 @@ const RoleCard = ({
   );
 };
 
-/* ──────────────────────── Members Section ──────────────────────── */
+/*  Members Section  */
 
 type MembersSectionProps = {
   roleId: string;
@@ -415,20 +440,28 @@ const MembersSection = ({
         <p className="text-xs text-gray-400">No members assigned</p>
       ) : (
         <div className="space-y-1">
-          {members.map((m) => (
-            <div key={m.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2">
-              <div>
-                <p className="text-sm font-medium text-gray-800">{m.user.name}</p>
-                <p className="text-xs text-gray-500">{m.user.email}</p>
+          {members.map((m) => {
+            const revokingThis =
+              revokeMember.isPending &&
+              revokeMember.variables?.userId === m.userId &&
+              revokeMember.variables?.roleId === roleId;
+            return (
+              <div key={m.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{m.user.name}</p>
+                  <p className="text-xs text-gray-500">{m.user.email}</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={revokeMember.isPending}
+                  onClick={() => revokeMember.mutate({ userId: m.userId, roleId })}
+                  className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {revokingThis ? "Revoking…" : "Revoke"}
+                </button>
               </div>
-              <button
-                onClick={() => revokeMember.mutate({ userId: m.userId, roleId })}
-                className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
-              >
-                Revoke
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       {unassignedUsers.length > 0 && (
@@ -453,7 +486,7 @@ const MembersSection = ({
             }}
             className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            Assign
+            {assignMember.isPending ? "Assigning…" : "Assign"}
           </button>
         </div>
       )}

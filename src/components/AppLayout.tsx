@@ -4,6 +4,7 @@ import { useAuthContext } from "../context/AuthContext.tsx";
 import { useLogout } from "../hooks/useAuth.ts";
 import PermissionGate from "./PermissionGate.tsx";
 import { LayoutDashboard, WalletCards, ChartColumnIncreasing, Users, ShieldCheck, LogOut } from "lucide-react"
+import { Link } from "react-router-dom";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
@@ -46,7 +47,7 @@ const AppLayout = () => {
         }`}
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <h1 className="text-lg font-bold text-gray-900">FinanceApp</h1>
+          <h1 className="text-lg font-bold text-gray-900"><Link to="/dashboard" className="hover:text-blue-600">FinanceApp</Link></h1>
           <button
             onClick={() => setSidebarOpen(false)}
             className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:hidden"

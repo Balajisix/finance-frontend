@@ -6,12 +6,4 @@ dotenv.config()
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  server: {
-    proxy: {
-      "/api": {
-        target: "https://finance-backend-api.vercel.app",
-        changeOrigin: true,
-      },
-    },
-  },
 })

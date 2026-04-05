@@ -128,7 +128,7 @@ const AppLayout = () => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
-          <h1 className="ml-3 text-base font-bold text-gray-900">FinanceApp</h1>
+          <h1 className="ml-3 text-base font-bold text-gray-900"><Link to="/dashboard" className="hover:text-blue-600">FinanceApp</Link></h1>
         </header>
 
         <main className="flex-1 overflow-auto">

@@ -14,6 +14,14 @@ import { useUsersList } from "../hooks/useUsers.ts";
 import type { Role } from "../types/roles.ts";
 import { getApiErrorMessage } from "../lib/apiErrors.ts";
 
+const closeCreateDialog = (
+  setOpen: (v: boolean) => void,
+  reset: () => void
+) => {
+  setOpen(false);
+  reset();
+};
+
 const Roles = () => {
   const { data: roles, isLoading, isError, error: rolesError, refetch } = useRolesList();
   const { data: allPermissions, isError: permError, error: permErr, refetch: refetchPerm } =
@@ -46,14 +54,8 @@ const Roles = () => {
       { slug, name, ...(desc.trim() ? { description: desc.trim() } : {}) },
       {
         onSuccess: () => { resetCreate(); setShowCreate(false); },
-        onError: (err) => {
-          if (err && typeof err === "object" && "response" in err) {
-            const res = (err as { response?: { data?: { message?: string } } }).response;
-            setCreateError(res?.data?.message ?? "Failed to create role");
-          } else {
-            setCreateError("Something went wrong");
-          }
-        },
+        onError: (err) =>
+          setCreateError(getApiErrorMessage(err, "Failed to create role")),
       }
     );
   };
@@ -109,25 +111,48 @@ const Roles = () => {
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Roles &amp; Permissions</h1>
         <button
-          onClick={() => { setShowCreate(!showCreate); resetCreate(); }}
+          type="button"
+          onClick={() => {
+            resetCreate();
+            setShowCreate(true);
+          }}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
         >
-          {showCreate ? "Cancel" : "+ Create Role"}
+          + Create Role
         </button>
       </div>
 
-      {/* Create role */}
+      {/* Create role dialog */}
       {showCreate && (
-        <div className="rounded-xl border border-gray-200 bg-white p-5">
-          <h2 className="mb-4 text-base font-semibold text-gray-900">New Role</h2>
-          <form onSubmit={handleCreate} className="space-y-4">
-            {createError && (
-              <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{createError}</div>
-            )}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => closeCreateDialog(setShowCreate, resetCreate)}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-role-title"
+          >
+            <h2 id="create-role-title" className="text-lg font-semibold text-gray-900">
+              New role
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Slug must start with a letter and use lowercase letters, numbers, underscores, or hyphens.
+            </p>
+
+            <form onSubmit={handleCreate} className="mt-5 space-y-4">
+              {createError && (
+                <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{createError}</div>
+              )}
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Slug</label>
+                <label htmlFor="role-slug" className="mb-1 block text-sm font-medium text-gray-700">
+                  Slug
+                </label>
                 <input
+                  id="role-slug"
                   type="text"
                   required
                   pattern="^[a-z][a-z0-9_-]*$"
@@ -138,8 +163,11 @@ const Roles = () => {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Name</label>
+                <label htmlFor="role-name" className="mb-1 block text-sm font-medium text-gray-700">
+                  Name
+                </label>
                 <input
+                  id="role-name"
                   type="text"
                   required
                   value={name}
@@ -149,26 +177,37 @@ const Roles = () => {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Description</label>
-                <input
-                  type="text"
+                <label htmlFor="role-desc" className="mb-1 block text-sm font-medium text-gray-700">
+                  Description <span className="font-normal text-gray-400">(optional)</span>
+                </label>
+                <textarea
+                  id="role-desc"
+                  rows={3}
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
-                  placeholder="Optional"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  placeholder="What this role is for…"
+                  className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
-            </div>
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={createRole.isPending}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
-              >
-                {createRole.isPending ? "Creating…" : "Create Role"}
-              </button>
-            </div>
-          </form>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => closeCreateDialog(setShowCreate, resetCreate)}
+                  disabled={createRole.isPending}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createRole.isPending}
+                  className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {createRole.isPending ? "Creating…" : "Create role"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

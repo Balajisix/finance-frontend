@@ -409,7 +409,7 @@ const CumulativeChart = ({ monthlyTrends, year, currentYear }: { monthlyTrends: 
   const showForecastLegend = isCurrent && chartData.some((d) => d.forecastSavings !== undefined);
 
   return (
-    <ChartCard title="Cumulative Savings Trajectory" subtitle={showForecastLegend ? "Projected savings based on current trend" : undefined}>
+    <ChartCard title="Cumulative Savings" subtitle={showForecastLegend ? "Projected savings based on current trend" : undefined}>
       <ResponsiveContainer width="100%" height={280}>
         <AreaChart data={chartData}>
           <defs>

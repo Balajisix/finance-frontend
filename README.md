@@ -6,6 +6,25 @@ React SPA for the finance product: **login**, **dashboard** and analytics (Recha
 
 ---
 
+## Demo accounts (access-restricted app)
+
+The product is **access-restricted**: what you can see and do depends on **RBAC** (roles and permissions). In a real deployment, an **administrator is created first** (for example via `npx prisma db seed` on the backend, using `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`). After that, further users are registered by an admin and assigned roles.
+
+For **demos and internal review**, dummy users were added so the company can sign in as each persona (admin, analyst, viewer, manager) without sharing one account. **These passwords are for demonstration only**—do not reuse them in production.
+
+| Email | Password | Notes |
+|--------|----------|--------|
+| `admin@gmail.com` | `Admin@123` | Full access (admin / wildcard permissions) |
+| `analyst@gmail.com` | `Analyst@123` | Typical analyst role (e.g. dashboard + records + insights) |
+| `viewer@gmail.com` | `Viewer@123` | Read-only style access (e.g. dashboard) |
+| `manager@gmail.com` | `Manager@123` | Dummy manager persona (role as configured in your database) |
+
+These accounts must **exist in the database** behind your API (create them with seed, migration, or the in-app user registration flow). If login fails, confirm the backend is seeded and that each user exists with the expected role assignment.
+
+**Source of truth:** this frontend README is where demo credentials are maintained. The [server README](../server/README.md) points here instead of duplicating passwords.
+
+---
+
 ## Tech stack
 
 | Area | Choice |
